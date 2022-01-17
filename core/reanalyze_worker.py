@@ -72,12 +72,15 @@ class BatchWorker_CPU(object):
             td_steps = np.clip(td_steps, 1, 5).astype(np.int)
 
             # prepare the corresponding observations for bootstrapped values o_{t+k}
+            
             game_obs = game.obs(state_index + td_steps, config.num_unroll_steps)
+            
             rewards_lst.append(game.rewards)
             for current_index in range(state_index, state_index + config.num_unroll_steps + 1):
                 td_steps_lst.append(td_steps)
                 bootstrap_index = current_index + td_steps
-
+                #@jc bootstrap_index = current_index + config.stack_observations, as we are only interested in whether the stacked_obs are valid.
+                #if we accept the above suggestion: should we padding the game_obs above? i.e., game_obs = game.obs(state_index + td_steps, config.num_unroll_steps, padding=True)
                 if bootstrap_index < traj_len:
                     value_mask.append(1)
                     beg_index = bootstrap_index - (state_index + td_steps)
@@ -142,6 +145,8 @@ class BatchWorker_CPU(object):
                 child_visits.append(game.child_visits)
                 # prepare the corresponding observations
                 game_obs = game.obs(state_index, config.num_unroll_steps)
+                #@jc: game_obs = game.obs(state_index, config.num_unroll_steps,padding=True)
+                #otherwise,game_obs[beg_index:end_index] will be valid for the end states in the trajectory.
                 for current_index in range(state_index, state_index + config.num_unroll_steps + 1):
 
                     if current_index < traj_len:
